@@ -18,6 +18,7 @@ export const auth = betterAuth({
                 required: false,
                 defaultValue: "user",
                 input: false, // Don't allow user to set their own role
+                returned: true, // Include role in session
             },
         },
     },

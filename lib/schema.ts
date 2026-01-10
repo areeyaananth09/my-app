@@ -46,3 +46,12 @@ export const verification = pgTable("verification", {
     createdAt: timestamp("createdAt"),
     updatedAt: timestamp("updatedAt"),
 });
+
+export const otp = pgTable("otp", {
+    id: text("id").primaryKey(),
+    email: text("email").notNull(),
+    code: text("code").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    verified: boolean("verified").notNull().default(false),
+    createdAt: timestamp("created_at").notNull(),
+});

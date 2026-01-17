@@ -81,6 +81,11 @@ Follow these steps to set up Google OAuth authentication for your app.
 Add these to your `.env` or `.env.local` file:
 
 ```env
+# Better Auth Configuration
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=your-secret-key-at-least-32-characters-long-random-string
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
+
 # Google OAuth
 GOOGLE_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret_here
@@ -88,8 +93,17 @@ GOOGLE_CLIENT_SECRET=your_client_secret_here
 
 **Example:**
 ```env
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
+
 GOOGLE_CLIENT_ID=123456789-abc123def456.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-abcdefghijklmnopqrst
+```
+
+**Note:** Generate a secure random string for `BETTER_AUTH_SECRET`. You can use:
+```bash
+openssl rand -base64 32
 ```
 
 ## Step 5: Restart Your Dev Server

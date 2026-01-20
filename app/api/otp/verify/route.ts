@@ -7,6 +7,8 @@ export async function POST(request: NextRequest) {
     try {
         const { email, code } = await request.json();
 
+        console.log('[OTP Verify] Attempting to verify OTP for email:', email);
+
         if (!email || !code) {
             return NextResponse.json(
                 { error: 'Email and code are required' },
@@ -29,6 +31,7 @@ export async function POST(request: NextRequest) {
             .limit(1);
 
         if (otpRecords.length === 0) {
+            console.log('[OTP Verify] Invalid or expired OTP');
             return NextResponse.json(
                 { error: 'Invalid or expired OTP' },
                 { status: 400 }
@@ -40,6 +43,8 @@ export async function POST(request: NextRequest) {
             .update(otp)
             .set({ verified: true })
             .where(eq(otp.id, otpRecords[0].id));
+
+        console.log('[OTP Verify] OTP verified successfully');
 
         // Check if user exists
         let existingUser = await db
@@ -53,6 +58,7 @@ export async function POST(request: NextRequest) {
         if (existingUser.length === 0) {
             // Create new user if doesn't exist
             const newUserId = crypto.randomUUID();
+            console.log('[OTP Verify] Creating new user with ID:', newUserId);
             await db.insert(user).values({
                 id: newUserId,
                 email,
@@ -65,22 +71,48 @@ export async function POST(request: NextRequest) {
             userId = newUserId;
         } else {
             userId = existingUser[0].id;
+            console.log('[OTP Verify] User already exists with ID:', userId);
+            // Update emailVerified if not already verified
+            if (!existingUser[0].emailVerified) {
+                await db
+                    .update(user)
+                    .set({ emailVerified: true, updatedAt: new Date() })
+                    .where(eq(user.id, userId));
+            }
         }
 
-        // Create session
+        // Delete any existing sessions for this user to avoid conflicts
+        await db
+            .delete(session)
+            .where(eq(session.userId, userId));
+
+        console.log('[OTP Verify] Deleted old sessions for user');
+
+        // Get IP address and user agent from request
+        const ipAddress = request.headers.get('x-forwarded-for') ||
+            request.headers.get('x-real-ip') ||
+            'unknown';
+        const userAgent = request.headers.get('user-agent') || 'unknown';
+
+        // Create a new session
+        const sessionId = crypto.randomUUID();
         const sessionToken = crypto.randomUUID();
         const sessionExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
         await db.insert(session).values({
-            id: crypto.randomUUID(),
+            id: sessionId,
             userId,
             token: sessionToken,
             expiresAt: sessionExpiresAt,
+            ipAddress,
+            userAgent,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
 
-        // Set session cookie with Better Auth naming
+        console.log('[OTP Verify] Created new session with token:', sessionToken.substring(0, 8) + '...');
+
+        // Create response
         const response = NextResponse.json({
             success: true,
             message: 'Login successful',
@@ -95,13 +127,15 @@ export async function POST(request: NextRequest) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 30 * 24 * 60 * 60, // 30 days
+            maxAge: 30 * 24 * 60 * 60,
             path: '/',
         });
 
+        console.log('[OTP Verify] Session cookie set successfully');
+
         return response;
     } catch (error) {
-        console.error('Error verifying OTP:', error);
+        console.error('[OTP Verify] Error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }

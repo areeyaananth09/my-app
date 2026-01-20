@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { Mail, ArrowLeft } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 interface OTPLoginProps {
     onBack?: () => void;
@@ -29,18 +30,20 @@ export default function OTPLogin({ onBack }: OTPLoginProps) {
         setError("");
 
         try {
-            const response = await fetch("/api/otp/send", {
+            const res = await fetch("/api/auth/email-otp/send-verification-otp", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({
+                    email,
+                    type: "sign-in",
+                }),
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Failed to send OTP");
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || errorData.statusText || "Failed to send OTP");
             }
 
             setStep("otp");
@@ -61,25 +64,26 @@ export default function OTPLogin({ onBack }: OTPLoginProps) {
         setError("");
 
         try {
-            const response = await fetch("/api/otp/verify", {
+            const res = await fetch("/api/auth/sign-in/email-otp", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email, code: otp }),
+                body: JSON.stringify({
+                    email,
+                    otp,
+                }),
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Failed to verify OTP");
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || errorData.statusText || "Failed to verify OTP");
             }
 
             // Use window.location for full page reload to ensure session is loaded
             window.location.href = "/";
         } catch (err: any) {
             setError(err.message || "Failed to verify OTP");
-        } finally {
             setLoading(false);
         }
     };

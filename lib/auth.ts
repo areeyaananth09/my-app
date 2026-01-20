@@ -15,16 +15,20 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
-    // socialProviders: {
-    //     google: {
-    //         clientId: process.env.GOOGLE_CLIENT_ID as string,
-    //         clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-    //     },
-    //     apple: {
-    //         clientId: process.env.APPLE_CLIENT_ID as string,
-    //         clientSecret: process.env.APPLE_CLIENT_SECRET as string,
-    //     },
-    // },
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+        },
+        apple: {
+            clientId: process.env.APPLE_CLIENT_ID as string,
+            clientSecret: process.env.APPLE_CLIENT_SECRET as string,
+        },
+        github: {
+            clientId: process.env.GITHUB_CLIENT_ID as string,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+        },
+    },
     plugins: [
         emailOTP({
             async sendVerificationOTP({ email, otp, type }: { email: string, otp: string, type: "sign-in" | "email-verification" | "forget-password" }) {
@@ -52,6 +56,12 @@ export const auth = betterAuth({
                 input: false, // Don't allow user to set their own role
                 returned: true, // Include role in session
             },
+        },
+    },
+    account: {
+        accountLinking: {
+            enabled: true,
+            trustedProviders: ["google", "apple", "github"],
         },
     },
 });
